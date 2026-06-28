@@ -6,6 +6,7 @@ import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/jasa/presentation/jasa_list_screen.dart';
 import '../../features/pelanggan/presentation/pelanggan_list_screen.dart';
 import '../../features/sparepart/presentation/sparepart_list_screen.dart';
+import '../../features/transaksi/presentation/penjualan_screen.dart';
 import 'app_routes.dart';
 
 /// Pembangkit route terpusat. Setiap fitur menambahkan case-nya
@@ -27,8 +28,10 @@ class RouteGenerator {
         return _build(const JasaListScreen(), settings);
       case AppRoutes.pelanggan:
         return _build(const PelangganListScreen(), settings);
+      case AppRoutes.penjualan:
+        return _build(const PenjualanScreen(), settings);
 
-      // TODO(fase berikutnya): transaksi, riwayat, laporan, dst.
+      // TODO(fase berikutnya): servis, riwayat, laporan, dst.
       default:
         return _build(_NotReadyScreen(name: settings.name), settings);
     }
