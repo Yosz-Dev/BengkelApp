@@ -1,21 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/formatter.dart';
+import '../../../core/utils/transaction_calculator.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/custom_button.dart';
-import '../../auth/provider/auth_provider.dart';
-import '../../sparepart/provider/sparepart_provider.dart';
-import '../provider/penjualan_provider.dart';
+import '../data/transaksi_model.dart';
 import 'struk_screen.dart';
 
-/// Layar pembayaran: ringkasan transaksi + input uang & kembalian.
+/// Satu baris ringkasan item pada layar pembayaran.
+class PembayaranLine {
+  final String label;
+  final double subtotal;
+
+  const PembayaranLine({required this.label, required this.subtotal});
+}
+
+/// Layar pembayaran generik (dipakai penjualan & servis): ringkasan transaksi,
+/// input uang & kembalian. Saat diproses memanggil [onCheckout]; jika berhasil
+/// (mengembalikan transaksi non-null) langsung menampilkan [StrukScreen].
 class PembayaranScreen extends StatefulWidget {
-  const PembayaranScreen({super.key});
+  final String title;
+  final List<PembayaranLine> lines;
+  final TransactionResult calc;
+
+  /// Mengembalikan transaksi tersimpan, atau null bila gagal.
+  final Future<TransaksiModel?> Function(double bayar) onCheckout;
+
+  const PembayaranScreen({
+    super.key,
+    this.title = 'Pembayaran',
+    required this.lines,
+    required this.calc,
+    required this.onCheckout,
+  });
 
   @override
   State<PembayaranScreen> createState() => _PembayaranScreenState();
@@ -24,6 +45,7 @@ class PembayaranScreen extends StatefulWidget {
 class _PembayaranScreenState extends State<PembayaranScreen> {
   final _bayarCtrl = TextEditingController();
   double _bayar = 0;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -41,35 +63,34 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
   }
 
   Future<void> _proses() async {
-    final penjualan = context.read<PenjualanProvider>();
-    final auth = context.read<AuthProvider>();
-    final user = auth.currentUser;
-    if (user == null) return;
-
-    final trx = await penjualan.checkout(bayar: _bayar, kasir: user);
-    if (!mounted) return;
-    if (trx == null) {
-      AppSnackbar.error(context, 'Pembayaran gagal. Periksa nominal & keranjang.');
-      return;
+    setState(() => _submitting = true);
+    try {
+      final trx = await widget.onCheckout(_bayar);
+      if (!mounted) return;
+      if (trx == null) {
+        AppSnackbar.error(
+          context,
+          'Pembayaran gagal. Periksa nominal & item.',
+        );
+        return;
+      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => StrukScreen(transaksi: trx)),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
-    // Segarkan stok sparepart setelah pengurangan.
-    await context.read<SparepartProvider>().load();
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => StrukScreen(transaksi: trx)),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final penjualan = context.watch<PenjualanProvider>();
-    final calc = penjualan.calc;
+    final calc = widget.calc;
     final kembalian = _bayar - calc.total;
     final cukup = _bayar >= calc.total;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pembayaran')),
+      appBar: AppBar(title: Text(widget.title)),
       body: ListView(
         padding: const EdgeInsets.all(AppConstants.paddingM),
         children: [
@@ -78,19 +99,16 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
               padding: const EdgeInsets.all(AppConstants.paddingM),
               child: Column(
                 children: [
-                  ...penjualan.cart.map(
-                    (item) => Padding(
+                  ...widget.lines.map(
+                    (line) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Row(
                         children: [
                           Expanded(
-                            child: Text(
-                              '${item.sparepart.nama}  x${item.qty}',
-                              style: AppTextStyles.body,
-                            ),
+                            child: Text(line.label, style: AppTextStyles.body),
                           ),
                           Text(
-                            Formatter.rupiah(item.subtotal),
+                            Formatter.rupiah(line.subtotal),
                             style: AppTextStyles.body,
                           ),
                         ],
@@ -160,7 +178,7 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
           CustomButton(
             label: 'Proses Pembayaran',
             icon: Icons.check_circle,
-            isLoading: penjualan.processing,
+            isLoading: _submitting,
             onPressed: cukup ? _proses : null,
           ),
         ],

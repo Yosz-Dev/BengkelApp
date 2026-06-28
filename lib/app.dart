@@ -10,6 +10,7 @@ import 'features/jasa/provider/jasa_provider.dart';
 import 'features/pelanggan/provider/pelanggan_provider.dart';
 import 'features/sparepart/provider/sparepart_provider.dart';
 import 'features/transaksi/provider/penjualan_provider.dart';
+import 'features/transaksi/provider/servis_provider.dart';
 
 /// Root widget aplikasi.
 class PosBengkelApp extends StatelessWidget {
@@ -24,6 +25,7 @@ class PosBengkelApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => JasaProvider()),
         ChangeNotifierProvider(create: (_) => PelangganProvider()),
         ChangeNotifierProvider(create: (_) => PenjualanProvider()),
+        ChangeNotifierProvider(create: (_) => ServisProvider()),
       ],
       child: MaterialApp(
         title: AppConstants.appName,

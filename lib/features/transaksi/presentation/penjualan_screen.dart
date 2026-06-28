@@ -7,6 +7,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/empty_state.dart';
+import '../../auth/provider/auth_provider.dart';
 import '../../sparepart/data/sparepart_model.dart';
 import '../../sparepart/provider/sparepart_provider.dart';
 import '../provider/penjualan_provider.dart';
@@ -45,9 +46,31 @@ class _PenjualanScreenState extends State<PenjualanScreen> {
       AppSnackbar.info(context, 'Keranjang masih kosong');
       return;
     }
+    final sparepart = context.read<SparepartProvider>();
+    final auth = context.read<AuthProvider>();
+
+    final lines = penjualan.cart
+        .map((item) => PembayaranLine(
+              label: '${item.sparepart.nama}  x${item.qty}',
+              subtotal: item.subtotal,
+            ))
+        .toList();
+
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const PembayaranScreen()),
+      MaterialPageRoute(
+        builder: (_) => PembayaranScreen(
+          lines: lines,
+          calc: penjualan.calc,
+          onCheckout: (bayar) async {
+            final user = auth.currentUser;
+            if (user == null) return null;
+            final trx = await penjualan.checkout(bayar: bayar, kasir: user);
+            if (trx != null) await sparepart.load();
+            return trx;
+          },
+        ),
+      ),
     );
   }
 
