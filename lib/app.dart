@@ -15,7 +15,7 @@ import 'features/sparepart/provider/sparepart_provider.dart';
 import 'features/transaksi/provider/penjualan_provider.dart';
 import 'features/transaksi/provider/servis_provider.dart';
 import 'features/user_management/provider/user_provider.dart';
-
+  
 /// Root widget aplikasi.
 class PosBengkelApp extends StatelessWidget {
   const PosBengkelApp({super.key});

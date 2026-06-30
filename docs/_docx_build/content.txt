@@ -1,0 +1,354 @@
+TITLE: Dokumentasi Aplikasi POS Bengkel
+
+POS Bengkel adalah aplikasi Point of Sale (kasir) berbasis Android untuk membantu operasional bengkel motor: mengelola transaksi penjualan sparepart, jasa servis, stok barang, data pelanggan, riwayat transaksi, serta laporan penjualan. Aplikasi berjalan secara offline menggunakan database lokal SQLite.
+
+Dokumen ini berisi tiga bagian utama: (1) cara menjalankan aplikasi secara manual menggunakan Visual Studio Code, (2) cara mengubah nama dan logo aplikasi, dan (3) penjelasan lengkap setiap bagian dari proyek.
+
+# 1. Ringkasan Teknologi
+
+Aplikasi ini dibangun dengan tumpukan teknologi (tech stack) berikut:
+
+- Framework: Flutter (bahasa Dart)
+- Database lokal: SQLite melalui paket `sqflite`
+- State management: `provider`
+- Penyimpanan sesi login: `shared_preferences`
+- Format mata uang dan tanggal: `intl` (locale Indonesia / id_ID)
+- Cetak struk dan PDF: paket `pdf` dan `printing`
+- Arsitektur: Feature-based architecture (kode dikelompokkan per fitur)
+- Pola dalam tiap fitur: data (model + repository) - provider (state) - presentation (UI)
+
+Akun default untuk login pertama kali (dibuat otomatis saat database dibuat):
+
+- Username: `admin`
+- Password: `admin123`
+- Role: admin (akses penuh)
+
+# 2. Menjalankan Aplikasi Lewat Visual Studio Code
+
+Bagian ini menjelaskan langkah demi langkah cara menjalankan proyek di komputer Anda menggunakan VS Code.
+
+## 2.1 Yang Perlu Disiapkan (Prasyarat)
+
+Pastikan perangkat lunak berikut sudah terpasang di komputer:
+
+- Flutter SDK (disarankan versi stabil terbaru). Unduh dari situs resmi flutter.dev.
+- Android Studio (untuk Android SDK, emulator, dan driver perangkat). Cukup sekali pasang.
+- Visual Studio Code.
+- Git (untuk mengambil/clone kode dari GitHub).
+- Salah satu media uji: HP Android (dengan USB Debugging aktif) atau Emulator Android.
+
+Extension VS Code yang wajib dipasang (buka panel Extensions / Ctrl+Shift+X lalu cari):
+
+- Flutter (otomatis akan menyertakan extension Dart).
+
+Verifikasi instalasi Flutter dengan membuka terminal dan menjalankan perintah berikut. Pastikan tidak ada centang merah pada bagian yang penting:
+
+```
+flutter doctor
+```
+
+## 2.2 Membuka Proyek
+
+Ada dua kemungkinan: proyek sudah ada di komputer, atau perlu diambil dari GitHub.
+
+Jika mengambil dari GitHub, jalankan di terminal (ganti folder tujuan sesuai keinginan):
+
+```
+git clone https://github.com/Yosz-Dev/BengkelApp.git
+cd BengkelApp
+```
+
+Kemudian buka folder proyek di VS Code: menu File - Open Folder - pilih folder proyek (folder yang berisi file `pubspec.yaml`).
+
+## 2.3 Mengunduh Dependensi
+
+Setiap kali pertama membuka proyek (atau setelah mengubah `pubspec.yaml`), unduh seluruh paket yang dibutuhkan. Jalankan di terminal VS Code (menu Terminal - New Terminal):
+
+```
+flutter pub get
+```
+
+## 2.4 Memilih Perangkat (Device)
+
+Aplikasi ini ditujukan untuk Android. Siapkan salah satu:
+
+- HP Android: aktifkan Opsi Pengembang dan USB Debugging, lalu sambungkan ke komputer via kabel USB. Izinkan koneksi debugging saat muncul dialog di HP.
+- Emulator: buka Android Studio - Device Manager - jalankan salah satu Virtual Device. Atau di VS Code, klik nama device di pojok kanan bawah lalu pilih emulator.
+
+Untuk memastikan device terbaca:
+
+```
+flutter devices
+```
+
+Di VS Code, perangkat aktif terlihat di status bar (pojok kanan bawah). Klik untuk berganti perangkat.
+
+## 2.5 Menjalankan Aplikasi
+
+Cara paling mudah lewat VS Code:
+
+- Buka file `lib/main.dart`.
+- Tekan tombol F5 (Run - Start Debugging), atau Ctrl+F5 (Run Without Debugging).
+- Tunggu proses build pertama selesai (build pertama biasanya lama, build berikutnya lebih cepat).
+
+Alternatif lewat terminal:
+
+```
+flutter run
+```
+
+Saat aplikasi berjalan dalam mode debug, Anda bisa menekan tombol `r` di terminal untuk Hot Reload (memuat ulang perubahan tampilan dengan cepat) atau `R` untuk Hot Restart (memulai ulang state aplikasi).
+
+## 2.6 Membuat File APK (Opsional)
+
+Untuk menghasilkan file APK yang bisa dipasang langsung di HP:
+
+```
+flutter build apk --release
+```
+
+File APK akan berada di: `build/app/outputs/flutter-apk/app-release.apk`.
+
+## 2.7 Mengatasi Masalah Umum
+
+- Jika muncul error dependensi: jalankan `flutter pub get` ulang.
+- Jika tampilan aneh setelah banyak perubahan: hentikan aplikasi lalu jalankan `flutter clean` kemudian `flutter pub get` dan jalankan ulang.
+- Jika device tidak terdeteksi: pastikan kabel USB mendukung data, USB Debugging aktif, dan driver Android terpasang.
+- Untuk memeriksa kesalahan kode tanpa menjalankan: gunakan `flutter analyze`.
+- Untuk menjalankan pengujian otomatis: gunakan `flutter test`.
+
+# 3. Mengubah Nama Aplikasi
+
+Ada dua "nama" yang berbeda dan keduanya bisa diubah terpisah.
+
+## 3.1 Nama di Bawah Ikon (Launcher Android)
+
+Ini adalah nama yang tampil di layar HP, di bawah ikon aplikasi. Diatur pada file:
+
+```
+android/app/src/main/AndroidManifest.xml
+```
+
+Cari baris `android:label` lalu ubah nilainya, misalnya menjadi "Bengkel Jaya":
+
+```
+<application
+    android:label="Bengkel Jaya"
+    android:name="${applicationName}"
+    android:icon="@mipmap/ic_launcher">
+```
+
+Setelah diubah, jalankan ulang aplikasi (sebaiknya `flutter clean` lalu jalankan kembali) agar perubahan terlihat.
+
+## 3.2 Nama di Dalam Aplikasi (Judul, Splash, Login, Struk)
+
+Nama yang tampil di dalam aplikasi (layar pembuka, halaman login, dan header struk) diambil dari satu sumber terpusat, yaitu konstanta `appName` pada file:
+
+```
+lib/core/constants/app_constants.dart
+```
+
+Ubah baris berikut:
+
+```
+static const String appName = 'POS Bengkel';
+```
+
+menjadi nama yang diinginkan, contoh:
+
+```
+static const String appName = 'Bengkel Jaya Motor';
+```
+
+Karena nilai ini dipakai bersama oleh banyak layar (`MaterialApp.title`, splash, login, dan struk PDF), cukup satu kali ubah dan seluruh aplikasi ikut berubah.
+
+## 3.3 Mengubah Nama Paket / Application ID (Lanjutan, Opsional)
+
+Application ID adalah identitas unik aplikasi di Android (saat ini `com.posbengkel.pos_bengkel`). Ini biasanya hanya perlu diubah jika akan dipublikasikan ke Play Store. Pengaturannya ada di:
+
+```
+android/app/build.gradle.kts
+```
+
+pada bagian `namespace` dan `applicationId`. Mengubah ini secara manual cukup rumit (perlu menyesuaikan struktur folder paket Java/Kotlin). Untuk pemula, disarankan memakai bantuan paket seperti `change_app_package_name`. Untuk kebutuhan tugas/skripsi, mengubah nama tampilan (bagian 3.1 dan 3.2) biasanya sudah cukup.
+
+# 4. Mengubah Logo / Ikon Aplikasi
+
+Ada dua jenis "logo": ikon launcher (di layar HP) dan logo di dalam aplikasi (splash dan login).
+
+## 4.1 Ikon Launcher (Tampil di Layar HP)
+
+Ikon launcher saat ini menunjuk ke `@mipmap/ic_launcher`, yaitu kumpulan gambar PNG yang tersimpan di folder berikut dengan ukuran berbeda-beda:
+
+- android/app/src/main/res/mipmap-mdpi/ic_launcher.png (48 x 48 px)
+- android/app/src/main/res/mipmap-hdpi/ic_launcher.png (72 x 72 px)
+- android/app/src/main/res/mipmap-xhdpi/ic_launcher.png (96 x 96 px)
+- android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png (144 x 144 px)
+- android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png (192 x 192 px)
+
+### Cara Mudah (Direkomendasikan): paket flutter_launcher_icons
+
+Cara ini otomatis membuat semua ukuran ikon hanya dari satu gambar.
+
+Langkah 1 - Siapkan satu file gambar logo persegi beresolusi tinggi, misalnya 1024 x 1024 piksel (format PNG). Simpan di dalam proyek, contoh: `assets/icon/logo.png`.
+
+Langkah 2 - Tambahkan paket ke `pubspec.yaml` pada bagian `dev_dependencies`:
+
+```
+dev_dependencies:
+  flutter_launcher_icons: ^0.14.1
+```
+
+Langkah 3 - Tambahkan konfigurasi berikut di `pubspec.yaml` (boleh diletakkan di bagian paling bawah, sejajar paling kiri):
+
+```
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/logo.png"
+```
+
+Langkah 4 - Jalankan perintah berikut di terminal:
+
+```
+flutter pub get
+dart run flutter_launcher_icons
+```
+
+Semua ikon di folder mipmap akan otomatis dibuat ulang dari logo Anda. Jalankan ulang aplikasi untuk melihat hasilnya.
+
+### Cara Manual
+
+Buat gambar `ic_launcher.png` untuk tiap ukuran di atas, lalu timpa file lama di masing-masing folder `mipmap-*`. Cara ini lebih repot karena harus menyiapkan lima ukuran berbeda secara manual.
+
+## 4.2 Logo di Dalam Aplikasi (Splash dan Login)
+
+Saat ini, logo di layar pembuka (splash) dan halaman login bukan berupa file gambar, melainkan ikon bawaan Material bernama `Icons.build_circle`. Lokasinya:
+
+- lib/features/auth/presentation/splash_screen.dart
+- lib/features/auth/presentation/login_screen.dart
+
+### Opsi A - Mengganti dengan Ikon Material Lain
+
+Cukup ganti `Icons.build_circle` dengan ikon lain, misalnya `Icons.two_wheeler` atau `Icons.storefront`. Contoh pada splash:
+
+```
+const Icon(
+  Icons.two_wheeler,
+  size: 96,
+  color: AppColors.textOnPrimary,
+),
+```
+
+### Opsi B - Mengganti dengan File Gambar Sendiri
+
+Langkah 1 - Simpan gambar logo, contoh `assets/images/logo.png`.
+
+Langkah 2 - Daftarkan folder asset di `pubspec.yaml` (bagian `flutter:`):
+
+```
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/logo.png
+```
+
+Langkah 3 - Jalankan `flutter pub get`.
+
+Langkah 4 - Ganti widget `Icon(...)` menjadi `Image.asset(...)` di splash dan/atau login:
+
+```
+Image.asset(
+  'assets/images/logo.png',
+  width: 96,
+  height: 96,
+),
+```
+
+# 5. Penjelasan Setiap Bagian Proyek
+
+Bagian ini menjelaskan struktur folder dan tanggung jawab tiap bagian, agar mudah dirawat dan dikembangkan.
+
+## 5.1 Gambaran Arsitektur
+
+Proyek memakai feature-based architecture: kode dikelompokkan berdasarkan fitur, bukan berdasarkan jenis file. Hampir setiap fitur memiliki tiga lapisan:
+
+- data: model data (bentuk objek) dan repository (akses database).
+- provider: pengelola state (data yang ditampilkan ke layar) memakai ChangeNotifier dari paket provider.
+- presentation: tampilan layar (UI) berupa widget Flutter.
+
+Alur datanya: Presentation (UI) memanggil Provider, Provider memanggil Repository, dan Repository membaca/menulis ke database SQLite. Hasilnya kembali ke Provider yang lalu memberi tahu UI untuk memperbarui tampilan.
+
+## 5.2 Folder Inti: lib/core
+
+Folder `lib/core` berisi kode yang dipakai bersama oleh seluruh fitur:
+
+- core/constants/app_constants.dart : konstanta umum (nama aplikasi, versi, aturan diskon dan pajak, ukuran spasi, role admin/kasir).
+- core/database/database_helper.dart : pembuka koneksi SQLite, pembuat seluruh tabel saat pertama dibuat, dan pengisian data awal (akun admin default dan profil bengkel).
+- core/database/db_constants.dart : daftar nama tabel dan nama kolom dalam satu tempat agar konsisten.
+- core/routes/app_routes.dart : daftar nama rute (alamat) tiap halaman.
+- core/routes/route_generator.dart : penentu halaman mana yang dibuka untuk tiap rute.
+- core/theme : pengaturan warna (app_colors), gaya teks (app_text_styles), dan tema aplikasi (app_theme).
+- core/utils/formatter.dart : memformat angka menjadi Rupiah dan memformat tanggal (locale Indonesia).
+- core/utils/validators.dart : aturan validasi form (wajib diisi, harus angka, panjang minimal).
+- core/utils/transaction_calculator.dart : perhitungan transaksi (subtotal, diskon, pajak, total, kembalian).
+- core/utils/struk_pdf.dart : pembuat dokumen PDF struk (ukuran kertas roll 80mm) yang dipakai ulang oleh transaksi dan riwayat.
+- core/widgets : komponen UI yang dipakai berulang (tombol, kolom input, dialog konfirmasi, snackbar, tampilan data kosong).
+
+## 5.3 Aturan Bisnis (Perhitungan Transaksi)
+
+Aturan perhitungan diatur di `app_constants.dart` dan dijalankan oleh `transaction_calculator.dart`:
+
+- Diskon: 10 persen, otomatis berlaku bila subtotal mencapai atau melebihi Rp 200.000.
+- Pajak: 11 persen, dihitung dari nilai setelah diskon (dasar pengenaan pajak).
+- Total: subtotal dikurangi diskon lalu ditambah pajak.
+- Kembalian: uang bayar dikurangi total.
+
+## 5.4 Database SQLite
+
+Database bernama `pos_bengkel.db` dan dibuat otomatis saat aplikasi pertama kali dijalankan. Tabel yang dibuat:
+
+- users : data pengguna (admin/kasir) untuk login.
+- shop_profile : profil bengkel (nama, alamat, telepon) untuk header struk.
+- spareparts : data sparepart (kode, nama, stok, harga beli, harga jual, satuan).
+- jasa : data jasa servis (nama, harga, deskripsi).
+- pelanggan : data pelanggan servis (nama, no HP, no kendaraan, jenis kendaraan).
+- transactions : header transaksi (tipe, pelanggan, subtotal, diskon, pajak, total, bayar, kembalian, kasir, tanggal).
+- transaction_items : rincian item tiap transaksi (snapshot nama dan harga, qty, subtotal).
+
+Catatan penting: nama dan harga item disimpan sebagai "snapshot" pada saat transaksi terjadi. Tujuannya agar riwayat transaksi tetap akurat walaupun data master (sparepart/jasa) berubah di kemudian hari. Selain itu, penyimpanan transaksi bersifat atomik (memakai SQL transaction): jika ada kegagalan, seluruh perubahan dibatalkan sehingga data tidak rusak. Stok sparepart otomatis berkurang ketika terjual.
+
+## 5.5 Folder Fitur: lib/features
+
+Setiap subfolder di `lib/features` adalah satu modul fungsional:
+
+- auth : autentikasi. Login (FR-01), logout, dan auto-login berbasis sesi (shared_preferences). Berisi splash screen, login screen, repository, model user, dan provider.
+- dashboard : halaman utama setelah login. Menampilkan ringkasan hari ini (pendapatan dan jumlah transaksi) serta jumlah stok menipis, ditambah grid menu navigasi ke seluruh modul. Menu tertentu hanya tampil untuk admin.
+- sparepart : manajemen data sparepart (FR-02). Tambah, ubah, hapus, cari, dan kelola stok.
+- jasa : manajemen data jasa servis (FR-03). Tambah, ubah, hapus.
+- pelanggan : manajemen data pelanggan servis (FR-04). Khusus admin.
+- transaksi : modul transaksi. Berisi penjualan sparepart (FR-05) dan servis kendaraan (FR-06), layar pembayaran (hitung total, input bayar, kembalian), serta layar struk dengan opsi cetak/PDF.
+- riwayat : daftar riwayat transaksi (FR-07). Bisa difilter berdasarkan tanggal dan tipe (penjualan/servis), menampilkan ringkasan total, dan membuka detail transaksi yang bisa dicetak ulang.
+- laporan : laporan (FR-08). Tab Pendapatan (harian/bulanan, dengan rincian per hari) dan tab Stok (jumlah item, total unit, nilai modal stok, dan daftar stok menipis). Khusus admin.
+- user_management : kelola user (admin/kasir). Tambah, ubah, hapus, dengan pengaman: username harus unik, admin terakhir tidak boleh dihapus, dan akun yang sedang login tidak boleh menghapus dirinya sendiri. Khusus admin.
+- profil : profil bengkel. Mengubah nama, alamat, dan nomor telepon yang dipakai pada header struk. Khusus admin.
+
+## 5.6 Hak Akses Berdasarkan Peran
+
+Aplikasi membedakan dua peran:
+
+- Admin: akses penuh ke semua menu, termasuk Pelanggan, Laporan, Kelola User, dan Profil Bengkel.
+- Kasir: dapat login, melakukan transaksi penjualan dan servis, melihat data sparepart dan jasa, serta melihat riwayat transaksi. Menu khusus admin tidak ditampilkan.
+
+## 5.7 Titik Awal Aplikasi
+
+- lib/main.dart : titik masuk program. Menyiapkan format tanggal Indonesia lalu menjalankan aplikasi.
+- lib/app.dart : root aplikasi. Mendaftarkan seluruh Provider (state management) dan mengatur tema, rute awal (splash), serta pembangkit rute.
+
+## 5.8 Pengujian (Folder test)
+
+Folder `test` berisi pengujian otomatis untuk logika penting yang murni perhitungan (tanpa database), antara lain: kalkulator transaksi (diskon, pajak, kembalian), serta logika keranjang penjualan dan servis. Jalankan dengan `flutter test`.
+
+# 6. Penutup
+
+Dengan struktur yang rapi dan terpusat, perubahan umum menjadi mudah: nama aplikasi cukup diubah di satu konstanta, warna dan gaya di folder theme, serta aturan diskon/pajak di file konstanta. Untuk menambah fitur baru, ikuti pola yang sama: buat folder fitur baru dengan lapisan data, provider, dan presentation, lalu daftarkan rute dan provider-nya.
