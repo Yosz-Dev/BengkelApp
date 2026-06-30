@@ -4,6 +4,7 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/jasa/presentation/jasa_list_screen.dart';
+import '../../features/laporan/presentation/laporan_screen.dart';
 import '../../features/pelanggan/presentation/pelanggan_list_screen.dart';
 import '../../features/riwayat/presentation/riwayat_list_screen.dart';
 import '../../features/sparepart/presentation/sparepart_list_screen.dart';
@@ -36,8 +37,10 @@ class RouteGenerator {
         return _build(const ServisScreen(), settings);
       case AppRoutes.riwayat:
         return _build(const RiwayatListScreen(), settings);
+      case AppRoutes.laporan:
+        return _build(const LaporanScreen(), settings);
 
-      // TODO(fase berikutnya): laporan, kelola user, profil.
+      // TODO(fase berikutnya): kelola user, profil.
       default:
         return _build(_NotReadyScreen(name: settings.name), settings);
     }
