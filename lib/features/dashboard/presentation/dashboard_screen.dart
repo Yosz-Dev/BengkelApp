@@ -5,8 +5,12 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../auth/provider/auth_provider.dart';
+import '../../laporan/data/laporan_model.dart';
+import '../../laporan/data/laporan_repository.dart';
+import '../../sparepart/data/sparepart_repository.dart';
 
 /// Item menu pada dashboard.
 class _MenuItem {
@@ -25,8 +29,7 @@ class _MenuItem {
   });
 }
 
-/// Dashboard utama — hub navigasi seluruh modul.
-/// (Ringkasan/statistik akan ditambahkan pada Fase 7.)
+/// Dashboard utama — hub navigasi seluruh modul + ringkasan hari ini.
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
@@ -90,6 +93,7 @@ class DashboardScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _Greeting(nama: user?.nama ?? '-', role: user?.role ?? '-'),
+          const _DashboardSummary(),
           Expanded(
             child: GridView.count(
               padding: const EdgeInsets.all(AppConstants.paddingM),
@@ -147,6 +151,121 @@ class _Greeting extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Ringkasan singkat: pendapatan & jumlah transaksi hari ini, stok menipis.
+class _DashboardSummary extends StatefulWidget {
+  const _DashboardSummary();
+
+  @override
+  State<_DashboardSummary> createState() => _DashboardSummaryState();
+}
+
+class _DashboardSummaryState extends State<_DashboardSummary> {
+  final _laporanRepo = LaporanRepository();
+  final _sparepartRepo = SparepartRepository();
+
+  RingkasanPendapatan? _ringkasan;
+  int _stokMenipis = 0;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final ringkasan = await _laporanRepo.pendapatanHarian(DateTime.now());
+    final spareparts = await _sparepartRepo.getAll();
+    if (!mounted) return;
+    setState(() {
+      _ringkasan = ringkasan;
+      _stokMenipis = spareparts.where((s) => s.stok <= 5).length;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final r = _ringkasan;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.paddingM,
+        AppConstants.paddingM,
+        AppConstants.paddingM,
+        0,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _SummaryTile(
+              icon: Icons.payments,
+              color: AppColors.success,
+              label: 'Pendapatan Hari Ini',
+              value: _loading ? '...' : Formatter.rupiah(r?.total ?? 0),
+              sub: _loading ? '' : '${r?.jumlahTransaksi ?? 0} transaksi',
+            ),
+          ),
+          const SizedBox(width: AppConstants.paddingM),
+          Expanded(
+            child: _SummaryTile(
+              icon: Icons.warning_amber,
+              color: _stokMenipis > 0 ? AppColors.error : AppColors.info,
+              label: 'Stok Menipis',
+              value: _loading ? '...' : '$_stokMenipis',
+              sub: 'item (≤ 5)',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryTile extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+  final String sub;
+
+  const _SummaryTile({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+    required this.sub,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppConstants.radius),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: AppTextStyles.title.copyWith(color: color),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(label, style: AppTextStyles.caption, maxLines: 1,
+              overflow: TextOverflow.ellipsis),
+          if (sub.isNotEmpty)
+            Text(sub, style: AppTextStyles.caption.copyWith(fontSize: 11)),
         ],
       ),
     );
