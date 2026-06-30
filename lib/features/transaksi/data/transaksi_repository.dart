@@ -43,4 +43,57 @@ class TransaksiRepository {
       return trxId;
     });
   }
+
+  /// Daftar transaksi (header saja) untuk layar Riwayat.
+  ///
+  /// [date] memfilter berdasarkan tanggal (mengabaikan jam). [tipe] memfilter
+  /// jenis transaksi (penjualan / servis). Terbaru tampil paling atas.
+  Future<List<TransaksiModel>> getAll({DateTime? date, String? tipe}) async {
+    final db = await _dbHelper.database;
+    final where = <String>[];
+    final args = <Object?>[];
+
+    if (date != null) {
+      final prefix =
+          '${date.year.toString().padLeft(4, '0')}-'
+          '${date.month.toString().padLeft(2, '0')}-'
+          '${date.day.toString().padLeft(2, '0')}';
+      where.add('${DbConstants.trxCreatedAt} LIKE ?');
+      args.add('$prefix%');
+    }
+    if (tipe != null && tipe.isNotEmpty) {
+      where.add('${DbConstants.trxTipe} = ?');
+      args.add(tipe);
+    }
+
+    final rows = await db.query(
+      DbConstants.tableTransaksi,
+      where: where.isEmpty ? null : where.join(' AND '),
+      whereArgs: args.isEmpty ? null : args,
+      orderBy: '${DbConstants.trxCreatedAt} DESC',
+    );
+    return rows.map((m) => TransaksiModel.fromMap(m)).toList();
+  }
+
+  /// Mengambil satu transaksi lengkap dengan itemnya. Null bila tidak ada.
+  Future<TransaksiModel?> getById(int id) async {
+    final db = await _dbHelper.database;
+    final headerRows = await db.query(
+      DbConstants.tableTransaksi,
+      where: '${DbConstants.trxId} = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (headerRows.isEmpty) return null;
+
+    final itemRows = await db.query(
+      DbConstants.tableTransaksiItem,
+      where: '${DbConstants.itemTransaksiId} = ?',
+      whereArgs: [id],
+      orderBy: '${DbConstants.itemId} ASC',
+    );
+    final items = itemRows.map(TransaksiItemModel.fromMap).toList();
+
+    return TransaksiModel.fromMap(headerRows.first, items: items);
+  }
 }
