@@ -6,10 +6,12 @@ import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/jasa/presentation/jasa_list_screen.dart';
 import '../../features/laporan/presentation/laporan_screen.dart';
 import '../../features/pelanggan/presentation/pelanggan_list_screen.dart';
+import '../../features/profil/presentation/profil_screen.dart';
 import '../../features/riwayat/presentation/riwayat_list_screen.dart';
 import '../../features/sparepart/presentation/sparepart_list_screen.dart';
 import '../../features/transaksi/presentation/penjualan_screen.dart';
 import '../../features/transaksi/presentation/servis_screen.dart';
+import '../../features/user_management/presentation/user_list_screen.dart';
 import 'app_routes.dart';
 
 /// Pembangkit route terpusat. Setiap fitur menambahkan case-nya
@@ -39,8 +41,11 @@ class RouteGenerator {
         return _build(const RiwayatListScreen(), settings);
       case AppRoutes.laporan:
         return _build(const LaporanScreen(), settings);
+      case AppRoutes.userManagement:
+        return _build(const UserListScreen(), settings);
+      case AppRoutes.profil:
+        return _build(const ProfilScreen(), settings);
 
-      // TODO(fase berikutnya): kelola user, profil.
       default:
         return _build(_NotReadyScreen(name: settings.name), settings);
     }

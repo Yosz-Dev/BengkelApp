@@ -9,10 +9,12 @@ import 'features/auth/provider/auth_provider.dart';
 import 'features/jasa/provider/jasa_provider.dart';
 import 'features/laporan/provider/laporan_provider.dart';
 import 'features/pelanggan/provider/pelanggan_provider.dart';
+import 'features/profil/provider/profil_provider.dart';
 import 'features/riwayat/provider/riwayat_provider.dart';
 import 'features/sparepart/provider/sparepart_provider.dart';
 import 'features/transaksi/provider/penjualan_provider.dart';
 import 'features/transaksi/provider/servis_provider.dart';
+import 'features/user_management/provider/user_provider.dart';
 
 /// Root widget aplikasi.
 class PosBengkelApp extends StatelessWidget {
@@ -30,6 +32,8 @@ class PosBengkelApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ServisProvider()),
         ChangeNotifierProvider(create: (_) => RiwayatProvider()),
         ChangeNotifierProvider(create: (_) => LaporanProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => ProfilProvider()),
       ],
       child: MaterialApp(
         title: AppConstants.appName,

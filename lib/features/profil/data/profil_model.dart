@@ -22,4 +22,27 @@ class ProfilModel {
       telepon: map[DbConstants.profileTelepon] as String?,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      if (id != null) DbConstants.profileId: id,
+      DbConstants.profileNama: nama,
+      DbConstants.profileAlamat: alamat,
+      DbConstants.profileTelepon: telepon,
+    };
+  }
+
+  ProfilModel copyWith({
+    int? id,
+    String? nama,
+    String? alamat,
+    String? telepon,
+  }) {
+    return ProfilModel(
+      id: id ?? this.id,
+      nama: nama ?? this.nama,
+      alamat: alamat ?? this.alamat,
+      telepon: telepon ?? this.telepon,
+    );
+  }
 }
